@@ -1,0 +1,18 @@
+body {
+    background: linear-gradient(160deg, #f3f7fb 0%, #ecf2f9 100%);
+    min-height: 100vh;
+}
+
+.card {
+    border: 0;
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.06);
+}
+
+.card-kpi {
+    background: linear-gradient(135deg, #ffffff 0%, #eef4ff 100%);
+}
+
+.table td,
+.table th {
+    vertical-align: middle;
+}
