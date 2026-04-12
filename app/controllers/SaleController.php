@@ -2,6 +2,47 @@
 
 class SaleController extends Controller
 {
+    public function history(): void
+    {
+        Auth::requireLogin();
+
+        $fromDate = $_GET['from'] ?? date('Y-m-01');
+        $toDate = $_GET['to'] ?? date('Y-m-d');
+
+        if (!$this->isValidDate($fromDate)) {
+            $fromDate = date('Y-m-01');
+        }
+        if (!$this->isValidDate($toDate)) {
+            $toDate = date('Y-m-d');
+        }
+
+        if ($fromDate > $toDate) {
+            [$fromDate, $toDate] = [$toDate, $fromDate];
+        }
+
+        $saleModel = new Sale();
+        $sales = $saleModel->historyByDateRange($fromDate, $toDate);
+
+        $selectedSaleId = isset($_GET['sale_id']) ? (int)$_GET['sale_id'] : 0;
+        $selectedSaleItems = [];
+        if ($selectedSaleId > 0) {
+            $selectedSaleItems = $saleModel->itemsBySale($selectedSaleId);
+        }
+
+        $totalRange = (float)array_reduce($sales, function ($carry, $sale) {
+            return $carry + (float)$sale['total'];
+        }, 0);
+
+        $this->view('sales/history', [
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+            'sales' => $sales,
+            'totalRange' => $totalRange,
+            'selectedSaleId' => $selectedSaleId,
+            'selectedSaleItems' => $selectedSaleItems,
+        ]);
+    }
+
     public function pos(): void
     {
         Auth::requireLogin();
@@ -10,9 +51,17 @@ class SaleController extends Controller
             $_SESSION['cart'] = [];
         }
 
+        $searchTerm = trim($_GET['q'] ?? '');
+        $searchResults = [];
+        if ($searchTerm !== '') {
+            $searchResults = (new Product())->searchForPos($searchTerm);
+        }
+
         $this->view('sales/pos', [
             'cart' => $_SESSION['cart'],
             'total' => $this->cartTotal($_SESSION['cart']),
+            'searchTerm' => $searchTerm,
+            'searchResults' => $searchResults,
         ]);
     }
 
@@ -93,5 +142,11 @@ class SaleController extends Controller
         return (float)array_reduce($cart, function ($carry, $item) {
             return $carry + (float)$item['subtotal'];
         }, 0);
+    }
+
+    private function isValidDate(string $date): bool
+    {
+        $d = DateTime::createFromFormat('Y-m-d', $date);
+        return $d && $d->format('Y-m-d') === $date;
     }
 }

@@ -54,4 +54,66 @@ class Sale extends Model
         $row = $stmt->fetch();
         return (int)($row['qty'] ?? 0);
     }
+
+    public function byDate(string $date): array
+    {
+        $stmt = $this->db->prepare('SELECT id, total, payment_method, created_at FROM sales WHERE DATE(created_at) = :date ORDER BY created_at ASC, id ASC');
+        $stmt->execute(['date' => $date]);
+        return $stmt->fetchAll();
+    }
+
+    public function totalByDate(string $date): float
+    {
+        $stmt = $this->db->prepare('SELECT COALESCE(SUM(total), 0) AS total FROM sales WHERE DATE(created_at) = :date');
+        $stmt->execute(['date' => $date]);
+        $row = $stmt->fetch();
+        return (float)($row['total'] ?? 0);
+    }
+
+    public function paymentMethodSummaryByDate(string $date): array
+    {
+        $stmt = $this->db->prepare('SELECT payment_method, COUNT(*) AS qty, COALESCE(SUM(total), 0) AS total FROM sales WHERE DATE(created_at) = :date GROUP BY payment_method ORDER BY total DESC');
+        $stmt->execute(['date' => $date]);
+        return $stmt->fetchAll();
+    }
+
+    public function historyByDateRange(string $fromDate, string $toDate): array
+    {
+        $sql = 'SELECT s.id,
+                       s.created_at,
+                       s.payment_method,
+                       s.total,
+                       COUNT(si.id) AS items_count
+                FROM sales s
+                LEFT JOIN sale_items si ON si.sale_id = s.id
+                WHERE DATE(s.created_at) BETWEEN :from_date AND :to_date
+                GROUP BY s.id, s.created_at, s.payment_method, s.total
+                ORDER BY s.created_at DESC, s.id DESC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'from_date' => $fromDate,
+            'to_date' => $toDate,
+        ]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function itemsBySale(int $saleId): array
+    {
+        $sql = 'SELECT si.quantity,
+                       si.unit_label,
+                       si.unit_price,
+                       si.subtotal,
+                       p.name AS product_name,
+                       p.barcode
+                FROM sale_items si
+                INNER JOIN products p ON p.id = si.product_id
+                WHERE si.sale_id = :sale_id
+                ORDER BY si.id ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['sale_id' => $saleId]);
+        return $stmt->fetchAll();
+    }
 }

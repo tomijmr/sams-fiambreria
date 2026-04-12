@@ -25,4 +25,36 @@ class Expense extends Model
         $row = $stmt->fetch();
         return (float)($row['total'] ?? 0);
     }
+
+    public function byDate(string $date): array
+    {
+        $stmt = $this->db->prepare('SELECT id, description, category, amount, date FROM expenses WHERE date = :date ORDER BY id ASC');
+        $stmt->execute(['date' => $date]);
+        return $stmt->fetchAll();
+    }
+
+    public function totalByDate(string $date): float
+    {
+        $stmt = $this->db->prepare('SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE date = :date');
+        $stmt->execute(['date' => $date]);
+        $row = $stmt->fetch();
+        return (float)($row['total'] ?? 0);
+    }
+
+    public function providerPaymentsByDate(string $date): float
+    {
+        $sql = "SELECT COALESCE(SUM(amount), 0) AS total
+                FROM expenses
+                WHERE date = :date
+                  AND (
+                    UPPER(category) LIKE '%PROVEEDOR%'
+                    OR UPPER(description) LIKE '%PROVEEDOR%'
+                    OR UPPER(description) LIKE '%PAGO%'
+                  )";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['date' => $date]);
+        $row = $stmt->fetch();
+        return (float)($row['total'] ?? 0);
+    }
 }

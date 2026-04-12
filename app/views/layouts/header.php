@@ -20,6 +20,9 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/dashboard">Panel</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/sales/pos">Ventas Rapidas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/sales/history">Historial Ventas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/purchases/manual">Compras</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/reports/daily-cash">Caja Diaria</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products">Stock</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/suppliers">Proveedores</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/expenses">Gastos</a></li>

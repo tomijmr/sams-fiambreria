@@ -45,6 +45,7 @@ class Router
             'products/edit' => ['ProductController', 'edit'],
             'products/update' => ['ProductController', 'update'],
             'products/delete' => ['ProductController', 'delete'],
+            'products/bulk-upload' => ['ProductController', 'bulkUpload'],
 
             'suppliers' => ['SupplierController', 'index'],
             'suppliers/store' => ['SupplierController', 'store'],
@@ -55,7 +56,15 @@ class Router
             'expenses/store' => ['ExpenseController', 'store'],
             'expenses/delete' => ['ExpenseController', 'delete'],
 
+            'purchases/manual' => ['PurchaseController', 'manual'],
+            'purchases/manual-store' => ['PurchaseController', 'manualStore'],
+            'purchases/invoices' => ['PurchaseController', 'invoices'],
+            'purchases/invoices-store' => ['PurchaseController', 'invoiceStore'],
+
+            'reports/daily-cash' => ['ReportController', 'dailyCash'],
+
             'sales/pos' => ['SaleController', 'pos'],
+            'sales/history' => ['SaleController', 'history'],
             'sales/add-item' => ['SaleController', 'addItem'],
             'sales/remove-item' => ['SaleController', 'removeItem'],
             'sales/checkout' => ['SaleController', 'checkout'],

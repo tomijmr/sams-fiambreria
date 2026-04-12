@@ -1,5 +1,8 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
-<h1 class="h3 mb-3">Proveedores</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Proveedores</h1>
+    <a class="btn btn-outline-primary" href="<?= BASE_URL ?>/purchases/invoices">Cargar Factura/Ticket</a>
+</div>
 
 <div class="card mb-4">
     <div class="card-header">Nuevo Proveedor</div>

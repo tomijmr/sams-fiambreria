@@ -21,10 +21,34 @@ class Product extends Model
 
     public function findByBarcode(string $barcode): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM products WHERE barcode = :barcode LIMIT 1');
+        $barcode = trim($barcode);
+        $stmt = $this->db->prepare('SELECT * FROM products WHERE TRIM(barcode) = :barcode LIMIT 1');
         $stmt->execute(['barcode' => $barcode]);
         $row = $stmt->fetch();
         return $row ?: null;
+    }
+
+    public function searchForPos(string $term, int $limit = 15): array
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return [];
+        }
+
+        $sql = 'SELECT id, name, barcode, unit_type, sale_price, stock_kg, stock_units
+                FROM products
+                WHERE TRIM(barcode) LIKE :barcode
+                   OR UPPER(name) LIKE UPPER(:name)
+                ORDER BY name ASC
+                LIMIT :limit';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':barcode', '%' . $term . '%', PDO::PARAM_STR);
+        $stmt->bindValue(':name', '%' . $term . '%', PDO::PARAM_STR);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
     }
 
     public function create(array $data): bool
@@ -71,6 +95,70 @@ class Product extends Model
         return $stmt->execute([
             'id' => $id,
             'amount' => $amount,
+        ]);
+    }
+
+    public function upsertFromBulk(array $payload, string $stockMode = 'replace'): void
+    {
+        $barcode = trim($payload['barcode']);
+        $name = trim($payload['name']);
+        $quantity = (float)$payload['quantity'];
+        $salePrice = (float)$payload['sale_price'];
+        $defaultUnitType = $payload['unit_type'] ?? 'unit';
+        $defaultProfit = (float)($payload['default_profit'] ?? 30);
+        $supplierId = $payload['supplier_id'] ?? null;
+
+        $existing = $this->findByBarcode($barcode);
+
+        if ($existing) {
+            $unitType = $existing['unit_type'];
+            $profit = (float)$existing['profit_percent'];
+            $effectiveSalePrice = $salePrice > 0 ? $salePrice : (float)$existing['sale_price'];
+            $divisor = 1 + ($profit / 100);
+            $costPrice = $divisor > 0 ? round($effectiveSalePrice / $divisor, 2) : $effectiveSalePrice;
+
+            $stockKg = (float)$existing['stock_kg'];
+            $stockUnits = (float)$existing['stock_units'];
+
+            if ($unitType === 'weight') {
+                $stockKg = $stockMode === 'add' ? $stockKg + $quantity : $quantity;
+            } else {
+                $stockUnits = $stockMode === 'add' ? $stockUnits + $quantity : $quantity;
+            }
+
+            $this->update((int)$existing['id'], [
+                'name' => $name !== '' ? $name : $existing['name'],
+                'barcode' => $barcode,
+                'unit_type' => $unitType,
+                'stock_kg' => $stockKg,
+                'stock_units' => $stockUnits,
+                'cost_price' => $costPrice,
+                'profit_percent' => $profit,
+                'sale_price' => $effectiveSalePrice,
+                'supplier_id' => $existing['supplier_id'],
+            ]);
+
+            return;
+        }
+
+        $profit = $defaultProfit;
+        $effectiveSalePrice = $salePrice > 0 ? $salePrice : 0;
+        $divisor = 1 + ($profit / 100);
+        $costPrice = $divisor > 0 ? round($effectiveSalePrice / $divisor, 2) : $effectiveSalePrice;
+
+        $stockKg = $defaultUnitType === 'weight' ? $quantity : 0;
+        $stockUnits = $defaultUnitType === 'unit' ? $quantity : 0;
+
+        $this->create([
+            'name' => $name !== '' ? $name : 'Producto sin nombre',
+            'barcode' => $barcode,
+            'unit_type' => $defaultUnitType,
+            'stock_kg' => $stockKg,
+            'stock_units' => $stockUnits,
+            'cost_price' => $costPrice,
+            'profit_percent' => $profit,
+            'sale_price' => $effectiveSalePrice,
+            'supplier_id' => $supplierId,
         ]);
     }
 }

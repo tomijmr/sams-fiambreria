@@ -54,6 +54,63 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">Alta Masiva por CSV</div>
+    <div class="card-body">
+        <form method="post" action="<?= BASE_URL ?>/products/bulk-upload" enctype="multipart/form-data" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Archivo CSV</label>
+                <input type="file" name="csv_file" class="form-control" accept=".csv,text/csv" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Separador</label>
+                <select name="delimiter" class="form-select">
+                    <option value=",">Coma (,)</option>
+                    <option value=";">Punto y coma (;)</option>
+                    <option value="tab">Tab</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Modo stock</label>
+                <select name="stock_mode" class="form-select">
+                    <option value="replace">Reemplazar</option>
+                    <option value="add">Sumar</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo default</label>
+                <select name="default_unit_type" class="form-select">
+                    <option value="unit">Unidad</option>
+                    <option value="weight">Peso (kg)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">% Ganancia default</label>
+                <input type="number" step="0.01" name="default_profit_percent" class="form-control" value="30">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Proveedor default (nuevos)</label>
+                <select name="default_supplier_id" class="form-select">
+                    <option value="">Sin proveedor</option>
+                    <?php foreach ($suppliers as $s): ?>
+                        <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Importar CSV</button>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">
+                    Formato recomendado: <strong>CODIGO,CANTIDAD,DESCRIPCION,PRECIO</strong>.
+                    Si el CSV tiene encabezados, el sistema los detecta automaticamente.
+                    El precio se toma como precio de venta.
+                </small>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">Listado</div>
     <div class="table-responsive">
