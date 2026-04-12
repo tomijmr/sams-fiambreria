@@ -1,4 +1,5 @@
 RewriteEngine On
+DirectoryIndex index.php
 
 # Sirve assets desde /public/assets manteniendo URL amigable /assets/*
 RewriteRule ^assets/(.*)$ public/assets/$1 [L]
