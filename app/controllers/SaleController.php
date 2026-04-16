@@ -126,6 +126,15 @@ class SaleController extends Controller
 
         $total = $this->cartTotal($cart);
         $paymentMethod = $_POST['payment_method'] ?? 'efectivo';
+        $amountPaid = $this->parseAmount($_POST['amount_paid'] ?? null);
+
+        if ($paymentMethod === 'efectivo' && $amountPaid < $total) {
+            $faltante = $total - $amountPaid;
+            $_SESSION['error'] = 'El monto recibido es menor al total. Faltan $ ' . number_format($faltante, 2, ',', '.');
+            $this->redirect('/sales/pos');
+        }
+
+        $change = $paymentMethod === 'efectivo' ? max(0, $amountPaid - $total) : 0;
 
         (new Sale())->createSale([
             'total' => $total,
@@ -133,7 +142,9 @@ class SaleController extends Controller
         ], $cart);
 
         $_SESSION['cart'] = [];
-        $_SESSION['success'] = 'Venta registrada correctamente';
+        $_SESSION['success'] = $paymentMethod === 'efectivo'
+            ? 'Venta registrada correctamente. Vuelto: $ ' . number_format($change, 2, ',', '.')
+            : 'Venta registrada correctamente';
         $this->redirect('/sales/pos');
     }
 
@@ -148,5 +159,22 @@ class SaleController extends Controller
     {
         $d = DateTime::createFromFormat('Y-m-d', $date);
         return $d && $d->format('Y-m-d') === $date;
+    }
+
+    private function parseAmount($value): float
+    {
+        if ($value === null) {
+            return 0;
+        }
+
+        $normalized = trim((string)$value);
+        if ($normalized === '') {
+            return 0;
+        }
+
+        $normalized = str_replace(['$', ' '], '', $normalized);
+        $normalized = str_replace(',', '.', $normalized);
+
+        return max(0, (float)$normalized);
     }
 }

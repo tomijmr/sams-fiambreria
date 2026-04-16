@@ -119,23 +119,67 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="post" action="<?= BASE_URL ?>/sales/checkout" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">Medio de Pago</label>
-                <select name="payment_method" class="form-select">
-                    <option value="efectivo">Efectivo</option>
-                    <option value="debito">Debito</option>
-                    <option value="credito">Credito</option>
-                    <option value="transferencia">Transferencia</option>
-                </select>
+        <div class="row g-3 align-items-center">
+            <div class="col-md-8">
+                <div class="fs-4 mb-0">Total Final: <strong>$ <?= number_format($total, 2, ',', '.') ?></strong></div>
+                <small class="text-muted">Confirma el cobro desde la ventana emergente.</small>
             </div>
             <div class="col-md-4">
-                <div class="fs-4">Total Final: <strong>$ <?= number_format($total, 2, ',', '.') ?></strong></div>
+                <button
+                    type="button"
+                    class="btn btn-primary btn-lg w-100"
+                    data-bs-toggle="modal"
+                    data-bs-target="#checkoutModal"
+                    <?= empty($cart) ? 'disabled' : '' ?>
+                >
+                    Cobrar Venta
+                </button>
             </div>
-            <div class="col-md-4">
-                <button class="btn btn-primary btn-lg w-100" <?= empty($cart) ? 'disabled' : '' ?>>Cobrar Venta</button>
-            </div>
-        </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="<?= BASE_URL ?>/sales/checkout">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Venta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-primary py-2">
+                        Total a cobrar: <strong>$ <span id="modalTotalLabel"><?= number_format($total, 2, ',', '.') ?></span></strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Medio de Pago</label>
+                        <select name="payment_method" id="paymentMethod" class="form-select">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="debito">Debito</option>
+                            <option value="credito">Credito</option>
+                            <option value="transferencia">Transferencia</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="cashReceivedGroup">
+                        <label class="form-label">Cliente paga con</label>
+                        <input type="text" inputmode="decimal" name="amount_paid" id="amountPaid" class="form-control" placeholder="0,00" autocomplete="off">
+                    </div>
+
+                    <div id="changeSummary" class="alert alert-light border mb-0 py-2">
+                        Vuelto: <strong id="changeAmount">$ 0,00</strong>
+                        <span class="text-danger ms-2" id="changeWarning"></span>
+                    </div>
+
+                    <input type="hidden" id="posTotal" value="<?= number_format((float)$total, 2, '.', '') ?>">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary">Confirmar y Cobrar</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
