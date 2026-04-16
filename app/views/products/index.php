@@ -44,11 +44,14 @@
                 <input type="number" step="0.01" name="cost_price" class="form-control" required>
             </div>
             <div class="col-md-2">
-                <label class="form-label">% Ganancia</label>
-                <input type="number" step="0.01" name="profit_percent" class="form-control" required>
+                <label class="form-label">Precio Venta</label>
+                <input type="number" step="0.01" name="sale_price" class="form-control" required>
             </div>
             <div class="col-md-4 d-flex align-items-end">
                 <button class="btn btn-primary w-100">Guardar Producto</button>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">La ganancia (%) se calcula automaticamente en base al costo y el precio de venta.</small>
             </div>
         </form>
     </div>
@@ -125,7 +128,7 @@
                     <th>%</th>
                     <th>P. Venta</th>
                     <th>Proveedor</th>
-                    <th></th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -140,12 +143,87 @@
                         <td>$ <?= number_format((float)$p['sale_price'], 2, ',', '.') ?></td>
                         <td><?= htmlspecialchars($p['supplier_name'] ?? '-') ?></td>
                         <td>
-                            <form method="post" action="<?= BASE_URL ?>/products/delete" onsubmit="return confirm('Eliminar producto?')">
-                                <input type="hidden" name="id" value="<?= $p['id'] ?>">
-                                <button class="btn btn-sm btn-outline-danger">Eliminar</button>
-                            </form>
+                            <div class="d-flex gap-1">
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editProductModal<?= (int)$p['id'] ?>"
+                                >
+                                    Editar
+                                </button>
+                                <form method="post" action="<?= BASE_URL ?>/products/delete" onsubmit="return confirm('Eliminar producto?')">
+                                    <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                    <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
+
+                    <div class="modal fade" id="editProductModal<?= (int)$p['id'] ?>" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <form method="post" action="<?= BASE_URL ?>/products/update">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Editar Producto</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Nombre</label>
+                                                <input name="name" class="form-control" value="<?= htmlspecialchars($p['name']) ?>" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Codigo de Barras</label>
+                                                <input name="barcode" class="form-control" value="<?= htmlspecialchars($p['barcode']) ?>" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Tipo</label>
+                                                <select name="unit_type" class="form-select">
+                                                    <option value="unit" <?= $p['unit_type'] === 'unit' ? 'selected' : '' ?>>Unidad</option>
+                                                    <option value="weight" <?= $p['unit_type'] === 'weight' ? 'selected' : '' ?>>Peso</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Stock (kg)</label>
+                                                <input type="number" step="0.001" name="stock_kg" class="form-control" value="<?= htmlspecialchars((string)$p['stock_kg']) ?>">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Stock (un.)</label>
+                                                <input type="number" name="stock_units" class="form-control" value="<?= (int)$p['stock_units'] ?>">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Costo</label>
+                                                <input type="number" step="0.01" name="cost_price" class="form-control" value="<?= htmlspecialchars((string)$p['cost_price']) ?>" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Precio Venta</label>
+                                                <input type="number" step="0.01" name="sale_price" class="form-control" value="<?= htmlspecialchars((string)$p['sale_price']) ?>" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Proveedor</label>
+                                                <select name="supplier_id" class="form-select">
+                                                    <option value="">Sin proveedor</option>
+                                                    <?php foreach ($suppliers as $s): ?>
+                                                        <option value="<?= (int)$s['id'] ?>" <?= (int)$s['id'] === (int)$p['supplier_id'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($s['name']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button class="btn btn-primary">Guardar cambios</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 <?php endforeach; ?>
             </tbody>
         </table>

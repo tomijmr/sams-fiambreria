@@ -31,23 +31,7 @@ class ProductController extends Controller
             $this->redirect('/products');
         }
 
-        $cost = (float)($_POST['cost_price'] ?? 0);
-        $profit = (float)($_POST['profit_percent'] ?? 0);
-        $salePrice = $cost + ($cost * $profit / 100);
-
-        $data = [
-            'name' => trim($_POST['name'] ?? ''),
-            'barcode' => trim($_POST['barcode'] ?? ''),
-            'unit_type' => $_POST['unit_type'] ?? 'unit',
-            'stock_kg' => (float)($_POST['stock_kg'] ?? 0),
-            'stock_units' => (int)($_POST['stock_units'] ?? 0),
-            'cost_price' => $cost,
-            'profit_percent' => $profit,
-            'sale_price' => round($salePrice, 2),
-            'supplier_id' => !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null,
-        ];
-
-        (new Product())->create($data);
+        (new Product())->create($this->buildProductDataFromRequest());
         $this->redirect('/products');
     }
 
@@ -61,23 +45,7 @@ class ProductController extends Controller
         Auth::requireLogin();
         $id = (int)($_POST['id'] ?? 0);
 
-        $cost = (float)($_POST['cost_price'] ?? 0);
-        $profit = (float)($_POST['profit_percent'] ?? 0);
-        $salePrice = $cost + ($cost * $profit / 100);
-
-        $data = [
-            'name' => trim($_POST['name'] ?? ''),
-            'barcode' => trim($_POST['barcode'] ?? ''),
-            'unit_type' => $_POST['unit_type'] ?? 'unit',
-            'stock_kg' => (float)($_POST['stock_kg'] ?? 0),
-            'stock_units' => (int)($_POST['stock_units'] ?? 0),
-            'cost_price' => $cost,
-            'profit_percent' => $profit,
-            'sale_price' => round($salePrice, 2),
-            'supplier_id' => !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null,
-        ];
-
-        (new Product())->update($id, $data);
+        (new Product())->update($id, $this->buildProductDataFromRequest());
         $this->redirect('/products');
     }
 
@@ -296,5 +264,24 @@ class ProductController extends Controller
         }
 
         return (float)$normalized;
+    }
+
+    private function buildProductDataFromRequest(): array
+    {
+        $cost = max(0, (float)($_POST['cost_price'] ?? 0));
+        $salePrice = max(0, (float)($_POST['sale_price'] ?? 0));
+        $profit = $cost > 0 ? (($salePrice - $cost) / $cost) * 100 : 0;
+
+        return [
+            'name' => trim($_POST['name'] ?? ''),
+            'barcode' => trim($_POST['barcode'] ?? ''),
+            'unit_type' => $_POST['unit_type'] ?? 'unit',
+            'stock_kg' => (float)($_POST['stock_kg'] ?? 0),
+            'stock_units' => (int)($_POST['stock_units'] ?? 0),
+            'cost_price' => round($cost, 2),
+            'profit_percent' => round($profit, 2),
+            'sale_price' => round($salePrice, 2),
+            'supplier_id' => !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null,
+        ];
     }
 }
