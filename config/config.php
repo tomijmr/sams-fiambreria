@@ -2,7 +2,8 @@
 
 define('APP_NAME', 'SAMS - Kiosko');
 
-$configuredBaseUrl = getenv('APP_BASE_URL') ?: '';
+// BASE_URL configurado por variable de entorno o valor por defecto
+$configuredBaseUrl = getenv('APP_BASE_URL') ?: '/dev/sams-fiambreria';
 
 if ($configuredBaseUrl !== '') {
 	$baseUrl = rtrim($configuredBaseUrl, '/');
@@ -30,12 +31,14 @@ define('BASE_URL', $baseUrl);
 $assetsUrl = str_ends_with(BASE_URL, '/public') ? (BASE_URL . '/assets') : (BASE_URL . '/public/assets');
 define('ASSETS_URL', rtrim($assetsUrl, '/'));
 
+// Credenciales de producción (hosting)
 // define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 // define('DB_NAME', getenv('DB_NAME') ?: 'a0011086_sams');
 // define('DB_USER', getenv('DB_USER') ?: 'a0011086');
 // define('DB_PASS', getenv('DB_PASS') ?: 'PObitovi56');
 // define('DB_CHARSET', 'utf8mb4');
 
+// Credenciales locales (XAMPP)
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_NAME', getenv('DB_NAME') ?: 'c2632136_gaucho');
 define('DB_USER', getenv('DB_USER') ?: 'c2632136_gaucho');
