@@ -1,5 +1,10 @@
-RewriteEngine On
-
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [QSA,L]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Permitir acceso a archivos y directorios reales
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Enruta todo a index.php (front controller)
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
