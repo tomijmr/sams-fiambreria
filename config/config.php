@@ -3,7 +3,7 @@
 define('APP_NAME', 'SAMS - Kiosko');
 
 // BASE_URL configurado por variable de entorno o valor por defecto
-$configuredBaseUrl = getenv('APP_BASE_URL') ?: '/dev/sams-fiambreria';
+$configuredBaseUrl = getenv('APP_BASE_URL') ?: '/dev/fiambreria';
 
 if ($configuredBaseUrl !== '') {
 	$baseUrl = rtrim($configuredBaseUrl, '/');
