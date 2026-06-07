@@ -11,25 +11,25 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard">SAMS - Kiosko</a>
+        <a class="navbar-brand" href="<?= route('dashboard') ?>">SAMS - Kiosko</a>
         <?php if ($isAuth): ?>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/dashboard">Panel</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/sales/pos">Ventas Rapidas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/sales/history">Historial Ventas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/purchases/manual">Compras</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/reports/daily-cash">Caja Diaria</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/products">Stock</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/suppliers">Proveedores</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= BASE_URL ?>/expenses">Gastos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('dashboard') ?>">Panel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('sales/pos') ?>">Ventas Rapidas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('sales/history') ?>">Historial Ventas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('purchases/manual') ?>">Compras</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('reports/daily-cash') ?>">Caja Diaria</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('products') ?>">Stock</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('suppliers') ?>">Proveedores</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('expenses') ?>">Gastos</a></li>
                 </ul>
                 <div class="d-flex align-items-center text-white gap-2">
                     <span class="small">Hola, <?= htmlspecialchars(Auth::userName()) ?></span>
-                    <a class="btn btn-outline-light btn-sm" href="<?= BASE_URL ?>/logout">Salir</a>
+                    <a class="btn btn-outline-light btn-sm" href="<?= route('logout') ?>">Salir</a>
                 </div>
             </div>
         <?php endif; ?>

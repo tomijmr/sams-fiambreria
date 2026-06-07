@@ -10,7 +10,9 @@ class Auth
     public static function requireLogin(): void
     {
         if (!self::check()) {
-            header('Location: ' . BASE_URL . '/login');
+            // Usar routeFallback para garantizar que funciona con y sin mod_rewrite
+            $loginUrl = routeFallback('login');
+            header('Location: ' . $loginUrl);
             exit;
         }
     }

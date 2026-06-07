@@ -10,7 +10,10 @@ class Controller
 
     protected function redirect(string $path): void
     {
-        header('Location: ' . BASE_URL . $path);
+        // Usar routeFallback para garantizar que funciona con y sin mod_rewrite
+        $url = routeFallback($path);
+        header('Location: ' . $url);
         exit;
     }
 }
+

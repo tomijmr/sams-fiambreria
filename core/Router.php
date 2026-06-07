@@ -4,9 +4,15 @@ class Router
 {
     public function dispatch(): void
     {
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $path = str_replace(BASE_URL, '', $uri);
-        $path = trim($path, '/');
+        // Opción 1: Si hay parámetro 'route' (fallback para hostings sin mod_rewrite)
+        if (!empty($_GET['route'])) {
+            $path = trim($_GET['route'], '/');
+        } else {
+            // Opción 2: Parsear la URI normalmente (con mod_rewrite)
+            $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            $path = str_replace(BASE_URL, '', $uri);
+            $path = trim($path, '/');
+        }
 
         if ($path === '') {
             $path = 'dashboard';

@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    DirectoryIndex index.php
     
     # Permitir acceso a archivos y directorios reales
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -9,14 +10,11 @@
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
     
     # Enruta todo al front controller dentro de /public
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ public/index.php [QSA,L]
 </IfModule>
 
-DirectoryIndex index.php
-
 # Bloqueamos acceso directo a ciertos archivos
-<FilesMatch "\.(env|sql|md)$">
+<FilesMatch "\.env$">
+    Order allow,deny
     Deny from all
 </FilesMatch>
