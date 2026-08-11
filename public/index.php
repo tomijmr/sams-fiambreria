@@ -1,5 +1,17 @@
 <?php
 
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || ($_SERVER['SERVER_PORT'] ?? null) == 443
+    || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'httponly' => true,
+    'secure' => $isHttps,
+    'samesite' => 'Lax',
+]);
+
 session_start();
 
 require_once __DIR__ . '/../config/config.php';

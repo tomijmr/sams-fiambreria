@@ -7,6 +7,7 @@
     <div class="card-header">Nuevo Producto</div>
     <div class="card-body">
         <form method="post" action="<?= BASE_URL ?>/products/store" class="row g-3">
+            <?= csrf_field() ?>
             <div class="col-md-4">
                 <label class="form-label">Nombre</label>
                 <input name="name" class="form-control" required>
@@ -61,6 +62,7 @@
     <div class="card-header">Alta Masiva por CSV</div>
     <div class="card-body">
         <form method="post" action="<?= BASE_URL ?>/products/bulk-upload" enctype="multipart/form-data" class="row g-3">
+            <?= csrf_field() ?>
             <div class="col-md-4">
                 <label class="form-label">Archivo CSV</label>
                 <input type="file" name="csv_file" class="form-control" accept=".csv,text/csv" required>
@@ -153,6 +155,7 @@
                                     Editar
                                 </button>
                                 <form method="post" action="<?= BASE_URL ?>/products/delete" onsubmit="return confirm('Eliminar producto?')">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                     <button class="btn btn-sm btn-outline-danger">Eliminar</button>
                                 </form>
@@ -164,6 +167,7 @@
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
                             <div class="modal-content">
                                 <form method="post" action="<?= BASE_URL ?>/products/update">
+                                    <?= csrf_field() ?>
                                     <div class="modal-header">
                                         <h5 class="modal-title">Editar Producto</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>

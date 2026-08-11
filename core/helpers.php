@@ -43,3 +43,37 @@ function asset(string $asset): string
 {
     return ASSETS_URL . '/' . ltrim($asset, '/');
 }
+
+/**
+ * Devuelve el token CSRF de la sesion actual, generandolo si no existe.
+ */
+function csrf_token(): string
+{
+    if (empty($_SESSION['_csrf_token'])) {
+        $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    return $_SESSION['_csrf_token'];
+}
+
+/**
+ * Input hidden listo para insertar dentro de un <form method="post">.
+ */
+function csrf_field(): string
+{
+    return '<input type="hidden" name="_csrf" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES) . '">';
+}
+
+/**
+ * Corta la ejecucion con 419 si el POST no trae un token CSRF valido.
+ * Debe llamarse al principio de cada accion que procese un POST.
+ */
+function csrf_verify(): void
+{
+    $token = $_POST['_csrf'] ?? '';
+
+    if ($token === '' || empty($_SESSION['_csrf_token']) || !hash_equals($_SESSION['_csrf_token'], $token)) {
+        http_response_code(403);
+        die('Token de seguridad invalido o expirado. Volve atras, recarga el formulario e intenta de nuevo.');
+    }
+}

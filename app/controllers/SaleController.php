@@ -68,6 +68,7 @@ class SaleController extends Controller
     public function addItem(): void
     {
         Auth::requireLogin();
+        csrf_verify();
 
         $barcode = trim($_POST['barcode'] ?? '');
         $quantity = (float)($_POST['quantity'] ?? 1);
@@ -104,6 +105,7 @@ class SaleController extends Controller
     public function removeItem(): void
     {
         Auth::requireLogin();
+        csrf_verify();
 
         $index = (int)($_POST['index'] ?? -1);
         if (isset($_SESSION['cart'][$index])) {
@@ -117,6 +119,7 @@ class SaleController extends Controller
     public function checkout(): void
     {
         Auth::requireLogin();
+        csrf_verify();
 
         $cart = $_SESSION['cart'] ?? [];
         if (empty($cart)) {
@@ -140,6 +143,8 @@ class SaleController extends Controller
             'total' => $total,
             'payment_method' => $paymentMethod,
         ], $cart);
+
+        Audit::record('create', 'sale', null, 'Venta por $ ' . number_format($total, 2, '.', '') . ' (' . $paymentMethod . ')');
 
         $_SESSION['cart'] = [];
         $_SESSION['success'] = $paymentMethod === 'efectivo'

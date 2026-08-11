@@ -4,11 +4,7 @@ class ProductController extends Controller
 {
     public function index(): void
     {
-        ini_set('display_errors', '1');
-        ini_set('display_startup_errors', '1');
-        error_reporting(E_ALL);
-
-        Auth::requireLogin();
+        Auth::requireAdmin();
         $productModel = new Product();
         $supplierModel = new Supplier();
 
@@ -25,13 +21,16 @@ class ProductController extends Controller
 
     public function store(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/products');
         }
+        csrf_verify();
 
-        (new Product())->create($this->buildProductDataFromRequest());
+        $data = $this->buildProductDataFromRequest();
+        (new Product())->create($data);
+        Audit::record('create', 'product', (int)Database::getInstance()->lastInsertId(), 'Producto creado: ' . $data['name']);
         $this->redirect('/products');
     }
 
@@ -42,28 +41,42 @@ class ProductController extends Controller
 
     public function update(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
+        csrf_verify();
         $id = (int)($_POST['id'] ?? 0);
+        $data = $this->buildProductDataFromRequest();
 
-        (new Product())->update($id, $this->buildProductDataFromRequest());
+        (new Product())->update($id, $data);
+        Audit::record('update', 'product', $id, 'Producto actualizado: ' . $data['name']);
         $this->redirect('/products');
     }
 
     public function delete(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
+        csrf_verify();
         $id = (int)($_POST['id'] ?? 0);
-        (new Product())->delete($id);
+
+        try {
+            (new Product())->delete($id);
+            Audit::record('delete', 'product', $id, 'Producto eliminado');
+            $_SESSION['success'] = 'Producto eliminado correctamente.';
+        } catch (PDOException $e) {
+            $_SESSION['error'] = 'No se puede eliminar el producto porque ya tiene compras o ventas registradas. '
+                . 'Si no queres que se siga vendiendo, dejalo en stock 0 en vez de borrarlo.';
+        }
+
         $this->redirect('/products');
     }
 
     public function bulkUpload(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/products');
         }
+        csrf_verify();
 
         if (empty($_FILES['csv_file']) || ($_FILES['csv_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             $_SESSION['error'] = 'No se pudo subir el archivo CSV.';
@@ -130,6 +143,7 @@ class ProductController extends Controller
 
         fclose($handle);
 
+        Audit::record('bulk_upload', 'product', null, "Importacion CSV. Procesados: $processed | Omitidos: $skipped | Con error: $errors");
         $_SESSION['success'] = 'Importacion finalizada. Procesados: ' . $processed . ' | Omitidos: ' . $skipped . ' | Con error: ' . $errors;
         $this->redirect('/products');
     }

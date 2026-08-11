@@ -5,6 +5,7 @@
     <div class="card-header">Nuevo Gasto</div>
     <div class="card-body">
         <form method="post" action="<?= BASE_URL ?>/expenses/store" class="row g-3">
+            <?= csrf_field() ?>
             <div class="col-md-4"><input name="description" class="form-control" placeholder="Descripcion" required></div>
             <div class="col-md-3"><input name="category" class="form-control" placeholder="Categoria"></div>
             <div class="col-md-2"><input type="number" step="0.01" name="amount" class="form-control" placeholder="Monto" required></div>
@@ -27,6 +28,7 @@
                     <td>$ <?= number_format((float)$e['amount'], 2, ',', '.') ?></td>
                     <td>
                         <form method="post" action="<?= BASE_URL ?>/expenses/delete" onsubmit="return confirm('Eliminar gasto?')">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="id" value="<?= $e['id'] ?>">
                             <button class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>

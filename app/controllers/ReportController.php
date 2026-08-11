@@ -4,7 +4,7 @@ class ReportController extends Controller
 {
     public function dailyCash(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
 
         $date = $_GET['date'] ?? date('Y-m-d');
         if (!$this->isValidDate($date)) {
@@ -34,6 +34,17 @@ class ReportController extends Controller
             'otherExpenses' => $otherExpenses,
             'netTotal' => $incomeTotal - $expenseTotal,
         ]);
+    }
+
+    public function activityLog(): void
+    {
+        Auth::requireAdmin();
+
+        $entries = Database::getInstance()
+            ->query('SELECT * FROM activity_log ORDER BY created_at DESC, id DESC LIMIT 200')
+            ->fetchAll();
+
+        $this->view('reports/activity_log', ['entries' => $entries]);
     }
 
     private function isValidDate(string $date): bool

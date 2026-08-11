@@ -18,6 +18,7 @@
             </div>
         </div>
     </div>
+    <?php if (Auth::isAdmin()): ?>
     <div class="col-md-4">
         <div class="card card-kpi">
             <div class="card-body">
@@ -26,6 +27,7 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <div class="card">

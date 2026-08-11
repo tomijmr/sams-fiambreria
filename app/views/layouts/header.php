@@ -1,4 +1,4 @@
-<?php $isAuth = Auth::check(); ?>
+<?php $isAuth = Auth::check(); $isAdmin = Auth::isAdmin(); ?>
 <!doctype html>
 <html lang="es">
 <head>
@@ -21,11 +21,14 @@
                     <li class="nav-item"><a class="nav-link" href="<?= route('dashboard') ?>">Panel</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= route('sales/pos') ?>">Ventas Rapidas</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= route('sales/history') ?>">Historial Ventas</a></li>
+                    <?php if ($isAdmin): ?>
                     <li class="nav-item"><a class="nav-link" href="<?= route('purchases/manual') ?>">Compras</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= route('reports/daily-cash') ?>">Caja Diaria</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= route('products') ?>">Stock</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= route('suppliers') ?>">Proveedores</a></li>
                     <li class="nav-item"><a class="nav-link" href="<?= route('expenses') ?>">Gastos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= route('reports/activity-log') ?>">Bitacora</a></li>
+                    <?php endif; ?>
                 </ul>
                 <div class="d-flex align-items-center text-white gap-2">
                     <span class="small">Hola, <?= htmlspecialchars(Auth::userName()) ?></span>

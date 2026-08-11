@@ -65,9 +65,12 @@ class Router
             'purchases/manual' => ['PurchaseController', 'manual'],
             'purchases/manual-store' => ['PurchaseController', 'manualStore'],
             'purchases/invoices' => ['PurchaseController', 'invoices'],
-            'purchases/invoices-store' => ['PurchaseController', 'invoiceStore'],
+            'purchases/invoices/add-item' => ['PurchaseController', 'invoiceAddItem'],
+            'purchases/invoices/remove-item' => ['PurchaseController', 'invoiceRemoveItem'],
+            'purchases/invoices/checkout' => ['PurchaseController', 'invoiceCheckout'],
 
             'reports/daily-cash' => ['ReportController', 'dailyCash'],
+            'reports/activity-log' => ['ReportController', 'activityLog'],
 
             'sales/pos' => ['SaleController', 'pos'],
             'sales/history' => ['SaleController', 'history'],

@@ -8,6 +8,7 @@
     <div class="card-header">Agregar por Lector de Codigo</div>
     <div class="card-body">
         <form method="post" action="<?= BASE_URL ?>/sales/add-item" class="row g-3" id="posForm">
+            <?= csrf_field() ?>
             <div class="col-md-5">
                 <label class="form-label">Codigo de barras</label>
                 <input id="barcodeInput" name="barcode" class="form-control form-control-lg" autofocus required>
@@ -25,65 +26,66 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header">Buscador Manual (nombre o codigo)</div>
+    <div class="card-header">Buscar por Nombre o Codigo</div>
     <div class="card-body">
         <form method="get" action="<?= BASE_URL ?>/sales/pos" class="row g-3 align-items-end">
             <div class="col-md-9">
-                <label class="form-label">Buscar producto</label>
-                <input type="text" name="q" class="form-control" value="<?= htmlspecialchars($searchTerm ?? '') ?>" placeholder="Ej: oreo o 7622201735906">
+                <label class="form-label">Producto</label>
+                <input type="text" name="q" class="form-control form-control-lg" value="<?= htmlspecialchars($searchTerm ?? '') ?>" placeholder="Escribi el nombre o el codigo. Ej: jamon o 7622201735906" autocomplete="off">
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <button class="btn btn-outline-primary w-100">Buscar</button>
-                <a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/sales/pos">Limpiar</a>
+                <?php if (!empty($searchTerm)): ?>
+                    <a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/sales/pos">Limpiar</a>
+                <?php endif; ?>
             </div>
         </form>
 
         <?php if (!empty($searchTerm)): ?>
             <hr>
-            <h2 class="h6">Resultados</h2>
             <?php if (empty($searchResults)): ?>
                 <p class="text-muted mb-0">No se encontraron productos para "<?= htmlspecialchars($searchTerm) ?>".</p>
             <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Codigo</th>
-                                <th>Precio</th>
-                                <th>Stock</th>
-                                <th style="width: 220px;">Agregar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($searchResults as $p): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($p['name']) ?></td>
-                                    <td><?= htmlspecialchars($p['barcode']) ?></td>
-                                    <td>$ <?= number_format((float)$p['sale_price'], 2, ',', '.') ?></td>
-                                    <td>
-                                        <?= $p['unit_type'] === 'weight'
-                                            ? number_format((float)$p['stock_kg'], 3, ',', '.') . ' kg'
-                                            : number_format((float)$p['stock_units'], 0, ',', '.') . ' un.' ?>
-                                    </td>
-                                    <td>
-                                        <form method="post" action="<?= BASE_URL ?>/sales/add-item" class="d-flex gap-2">
-                                            <input type="hidden" name="barcode" value="<?= htmlspecialchars($p['barcode']) ?>">
-                                            <input
-                                                type="number"
-                                                step="0.001"
-                                                min="0.001"
-                                                name="quantity"
-                                                class="form-control form-control-sm"
-                                                value="<?= $p['unit_type'] === 'weight' ? '100' : '1' ?>"
-                                            >
-                                            <button class="btn btn-sm btn-success">Agregar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="list-group">
+                    <?php foreach ($searchResults as $p): ?>
+                        <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <div class="fw-semibold"><?= htmlspecialchars($p['name']) ?></div>
+                                <div class="text-muted small">
+                                    <?= htmlspecialchars($p['barcode']) ?>
+                                    &middot; $ <?= number_format((float)$p['sale_price'], 2, ',', '.') ?>
+                                    &middot; Stock:
+                                    <?= $p['unit_type'] === 'weight'
+                                        ? number_format((float)$p['stock_kg'], 3, ',', '.') . ' kg'
+                                        : number_format((float)$p['stock_units'], 0, ',', '.') . ' un.' ?>
+                                </div>
+                            </div>
+                            <?php if ($p['unit_type'] === 'weight'): ?>
+                                <form method="post" action="<?= BASE_URL ?>/sales/add-item" class="d-flex gap-2 align-items-center">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="barcode" value="<?= htmlspecialchars($p['barcode']) ?>">
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        min="0.001"
+                                        name="quantity"
+                                        class="form-control form-control-sm"
+                                        style="width: 100px;"
+                                        value="100"
+                                        title="Gramos"
+                                    >
+                                    <button class="btn btn-success">Agregar</button>
+                                </form>
+                            <?php else: ?>
+                                <form method="post" action="<?= BASE_URL ?>/sales/add-item">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="barcode" value="<?= htmlspecialchars($p['barcode']) ?>">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button class="btn btn-success">Agregar al carrito</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             <?php endif; ?>
         <?php endif; ?>
@@ -106,6 +108,7 @@
                     <td>$ <?= number_format((float)$item['subtotal'], 2, ',', '.') ?></td>
                     <td>
                         <form method="post" action="<?= BASE_URL ?>/sales/remove-item">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="index" value="<?= $index ?>">
                             <button class="btn btn-sm btn-outline-danger">Quitar</button>
                         </form>
@@ -143,6 +146,7 @@
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content">
             <form method="post" action="<?= BASE_URL ?>/sales/checkout">
+                <?= csrf_field() ?>
                 <div class="modal-header">
                     <h5 class="modal-title">Confirmar Venta</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>

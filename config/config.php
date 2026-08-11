@@ -1,5 +1,22 @@
 <?php
 
+// Cargar variables de entorno desde .env si existe (no versionado en git)
+$envFile = __DIR__ . '/../.env';
+if (is_readable($envFile)) {
+	foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+		$line = trim($line);
+		if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+			continue;
+		}
+		[$key, $value] = explode('=', $line, 2);
+		$key = trim($key);
+		$value = trim($value);
+		if ($key !== '' && getenv($key) === false) {
+			putenv($key . '=' . $value);
+		}
+	}
+}
+
 define('APP_NAME', 'SAMS - Kiosko');
 
 // Detectar el ambiente (local vs hosting)
@@ -36,11 +53,16 @@ if ($isLocal) {
 	define('DB_USER', getenv('DB_USER') ?: 'root');
 	define('DB_PASS', getenv('DB_PASS') ?: '');
 } else {
-	// Credenciales de hosting
+	// Credenciales de hosting: deben venir SIEMPRE del archivo .env (no versionado).
+	// Ver .env.example para el formato.
+	if (getenv('DB_NAME') === false || getenv('DB_USER') === false || getenv('DB_PASS') === false) {
+		http_response_code(500);
+		die('Falta configurar el archivo .env con las credenciales de la base de datos (ver .env.example).');
+	}
 	define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-	define('DB_NAME', getenv('DB_NAME') ?: 'c2632136_gaucho');
-	define('DB_USER', getenv('DB_USER') ?: 'c2632136_gaucho');
-	define('DB_PASS', getenv('DB_PASS') ?: 'pobe44KOfo');
+	define('DB_NAME', getenv('DB_NAME'));
+	define('DB_USER', getenv('DB_USER'));
+	define('DB_PASS', getenv('DB_PASS'));
 }
 
 define('DB_CHARSET', 'utf8mb4');

@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     username VARCHAR(60) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'cajero',
+    failed_attempts INT NOT NULL DEFAULT 0,
+    locked_until DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -60,8 +63,21 @@ CREATE TABLE IF NOT EXISTS expenses (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO users (name, username, password)
-VALUES ('Administrador', 'admin', '$2y$10$oz5H3exx6MIcCkv0uZlyNOWdUitjzsF/y8mjSoWc3sFKEBZSjdjcm')
+CREATE TABLE IF NOT EXISTS activity_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    user_name VARCHAR(100) NOT NULL DEFAULT '',
+    action VARCHAR(50) NOT NULL,
+    entity VARCHAR(50) NOT NULL,
+    entity_id INT NULL,
+    details VARCHAR(255) NOT NULL DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_activity_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+INSERT INTO users (name, username, password, role)
+VALUES ('Administrador', 'admin', '$2y$10$oz5H3exx6MIcCkv0uZlyNOWdUitjzsF/y8mjSoWc3sFKEBZSjdjcm', 'admin')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
-    password = VALUES(password);
+    password = VALUES(password),
+    role = VALUES(role);

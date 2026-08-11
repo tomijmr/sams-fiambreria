@@ -5,6 +5,7 @@
             <div class="card-body p-4">
                 <h1 class="h4 mb-3 text-center">Ingreso al sistema</h1>
                 <form method="post" action="<?= routeFallback('login') ?>">
+                    <?= csrf_field() ?>
                     <div class="mb-3">
                         <label class="form-label">Usuario</label>
                         <input type="text" name="username" class="form-control" required>

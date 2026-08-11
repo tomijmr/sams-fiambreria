@@ -21,4 +21,24 @@ class Auth
     {
         return $_SESSION['user_name'] ?? 'Invitado';
     }
+
+    public static function role(): string
+    {
+        return $_SESSION['user_role'] ?? 'cajero';
+    }
+
+    public static function isAdmin(): bool
+    {
+        return self::role() === 'admin';
+    }
+
+    public static function requireAdmin(): void
+    {
+        self::requireLogin();
+
+        if (!self::isAdmin()) {
+            http_response_code(403);
+            die('No tenes permisos para acceder a esta seccion.');
+        }
+    }
 }

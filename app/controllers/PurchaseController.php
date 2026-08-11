@@ -4,7 +4,7 @@ class PurchaseController extends Controller
 {
     public function manual(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
 
         $this->view('purchases/manual', [
             'products' => (new Product())->all(),
@@ -15,7 +15,8 @@ class PurchaseController extends Controller
 
     public function manualStore(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
+        csrf_verify();
 
         $productId = (int)($_POST['product_id'] ?? 0);
         $quantity = $this->parseNumber($_POST['quantity'] ?? '0');
@@ -41,6 +42,7 @@ class PurchaseController extends Controller
                 'unit_cost' => $unitCost,
             ]]);
 
+            Audit::record('create', 'purchase', null, 'Ingreso manual: producto #' . $productId . ' x' . $quantity);
             $_SESSION['success'] = 'Ingreso manual registrado y stock actualizado.';
         } catch (Throwable $e) {
             $_SESSION['error'] = 'No se pudo registrar el ingreso manual.';
@@ -51,90 +53,159 @@ class PurchaseController extends Controller
 
     public function invoices(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
+
+        $draft = $this->draft();
 
         $this->view('purchases/invoices', [
             'suppliers' => (new Supplier())->all(),
             'recentInvoices' => (new Purchase())->recent(20, 'invoice'),
             'recentTickets' => (new Purchase())->recent(20, 'ticket'),
+            'header' => $draft['header'],
+            'items' => $draft['items'],
+            'draftTotal' => array_reduce($draft['items'], fn ($carry, $item) => $carry + (float)$item['subtotal'], 0.0),
         ]);
     }
 
-    public function invoiceStore(): void
+    public function invoiceAddItem(): void
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
+        csrf_verify();
 
-        $supplierId = (int)($_POST['supplier_id'] ?? 0);
-        $docType = $_POST['doc_type'] ?? 'invoice';
-        $docNumber = trim($_POST['doc_number'] ?? '');
-        $date = $_POST['date'] ?? date('Y-m-d');
-        $notes = trim($_POST['notes'] ?? '');
-        $itemsText = trim($_POST['items_text'] ?? '');
+        $_SESSION['purchase_draft']['header'] = [
+            'supplier_id' => (int)($_POST['supplier_id'] ?? 0),
+            'doc_type' => ($_POST['doc_type'] ?? 'invoice') === 'ticket' ? 'ticket' : 'invoice',
+            'doc_number' => trim($_POST['doc_number'] ?? ''),
+            'date' => $_POST['date'] ?? date('Y-m-d'),
+            'notes' => trim($_POST['notes'] ?? ''),
+        ];
 
-        if ($supplierId <= 0 || $itemsText === '') {
-            $_SESSION['error'] = 'Selecciona proveedor y carga items para registrar factura/ticket.';
+        $barcode = trim($_POST['barcode'] ?? '');
+        $quantity = $this->parseNumber($_POST['quantity'] ?? '0');
+        $unitCost = $this->parseMoney($_POST['unit_cost'] ?? '0');
+
+        if ($barcode === '' || $quantity <= 0 || $unitCost <= 0) {
+            $_SESSION['error'] = 'Completa codigo de barras, cantidad y costo unitario validos.';
             $this->redirect('/purchases/invoices');
         }
 
-        $lines = preg_split('/\r\n|\r|\n/', $itemsText);
-        $items = [];
-        $errors = [];
         $productModel = new Product();
+        $product = $productModel->findByBarcode($barcode);
+        $isNew = false;
 
-        foreach ($lines as $index => $line) {
-            $line = trim($line);
-            if ($line === '') {
-                continue;
+        if (!$product) {
+            $name = trim($_POST['name'] ?? '');
+            if ($name === '') {
+                $_SESSION['error'] = 'El codigo "' . $barcode . '" no existe todavia. Ingresa el nombre para crear el producto nuevo.';
+                $this->redirect('/purchases/invoices');
             }
 
-            $parts = preg_split('/[;,\t]+/', $line);
-            if (count($parts) < 3) {
-                $errors[] = 'Linea ' . ($index + 1) . ': formato invalido.';
-                continue;
-            }
+            $unitType = ($_POST['unit_type'] ?? 'unit') === 'weight' ? 'weight' : 'unit';
+            $profitPercent = (float)($_POST['profit_percent'] ?? 30);
+            $supplierId = !empty($_SESSION['purchase_draft']['header']['supplier_id'])
+                ? (int)$_SESSION['purchase_draft']['header']['supplier_id']
+                : null;
 
-            $barcode = trim($parts[0]);
-            $quantity = $this->parseNumber($parts[1]);
-            $unitCost = $this->parseMoney($parts[2]);
+            $productModel->create([
+                'name' => $name,
+                'barcode' => $barcode,
+                'unit_type' => $unitType,
+                'stock_kg' => 0,
+                'stock_units' => 0,
+                'cost_price' => 0,
+                'profit_percent' => $profitPercent,
+                'sale_price' => 0,
+                'supplier_id' => $supplierId,
+            ]);
 
-            if ($barcode === '' || $quantity <= 0 || $unitCost <= 0) {
-                $errors[] = 'Linea ' . ($index + 1) . ': codigo/cantidad/costo invalidos.';
-                continue;
-            }
-
-            $product = $productModel->findByBarcode($barcode);
-            if (!$product) {
-                $errors[] = 'Linea ' . ($index + 1) . ': barcode no encontrado (' . $barcode . ').';
-                continue;
-            }
-
-            $items[] = [
-                'product_id' => (int)$product['id'],
-                'quantity' => $quantity,
-                'unit_cost' => $unitCost,
-            ];
+            $newId = (int)Database::getInstance()->lastInsertId();
+            $product = $productModel->find($newId);
+            $isNew = true;
+            Audit::record('create', 'product', $newId, 'Producto creado desde carga de compra: ' . $name);
         }
 
-        if (!empty($errors)) {
-            $_SESSION['error'] = implode(' ', $errors);
+        $_SESSION['purchase_draft']['items'][] = [
+            'product_id' => (int)$product['id'],
+            'barcode' => $product['barcode'],
+            'name' => $product['name'],
+            'unit_type' => $product['unit_type'],
+            'quantity' => $quantity,
+            'unit_cost' => $unitCost,
+            'subtotal' => round($quantity * $unitCost, 2),
+            'is_new' => $isNew,
+        ];
+
+        $this->redirect('/purchases/invoices');
+    }
+
+    public function invoiceRemoveItem(): void
+    {
+        Auth::requireAdmin();
+        csrf_verify();
+
+        $index = (int)($_POST['index'] ?? -1);
+        if (isset($_SESSION['purchase_draft']['items'][$index])) {
+            unset($_SESSION['purchase_draft']['items'][$index]);
+            $_SESSION['purchase_draft']['items'] = array_values($_SESSION['purchase_draft']['items']);
+        }
+
+        $this->redirect('/purchases/invoices');
+    }
+
+    public function invoiceCheckout(): void
+    {
+        Auth::requireAdmin();
+        csrf_verify();
+
+        $draft = $this->draft();
+        $header = $draft['header'];
+        $items = $draft['items'];
+        $supplierId = (int)$header['supplier_id'];
+
+        if ($supplierId <= 0 || empty($items)) {
+            $_SESSION['error'] = 'Selecciona proveedor y agrega al menos un item antes de confirmar.';
             $this->redirect('/purchases/invoices');
         }
 
         try {
-            (new Purchase())->create([
+            $purchaseId = (new Purchase())->create([
                 'supplier_id' => $supplierId,
-                'doc_type' => $docType === 'ticket' ? 'ticket' : 'invoice',
-                'doc_number' => $docNumber,
-                'date' => $date,
-                'notes' => $notes,
-            ], $items);
+                'doc_type' => $header['doc_type'],
+                'doc_number' => $header['doc_number'],
+                'date' => $header['date'],
+                'notes' => $header['notes'],
+            ], array_map(fn ($item) => [
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_cost' => $item['unit_cost'],
+            ], $items));
 
-            $_SESSION['success'] = 'Factura/ticket registrado, costos y stock actualizados.';
+            Audit::record('create', 'purchase', $purchaseId, 'Factura/ticket de proveedor #' . $supplierId . ' con ' . count($items) . ' items');
+            unset($_SESSION['purchase_draft']);
+            $_SESSION['success'] = 'Compra registrada. Stock y costos actualizados.';
         } catch (Throwable $e) {
-            $_SESSION['error'] = 'No se pudo registrar la factura/ticket.';
+            $_SESSION['error'] = 'No se pudo registrar la compra.';
         }
 
         $this->redirect('/purchases/invoices');
+    }
+
+    private function draft(): array
+    {
+        if (!isset($_SESSION['purchase_draft'])) {
+            $_SESSION['purchase_draft'] = [
+                'header' => [
+                    'supplier_id' => 0,
+                    'doc_type' => 'invoice',
+                    'doc_number' => '',
+                    'date' => date('Y-m-d'),
+                    'notes' => '',
+                ],
+                'items' => [],
+            ];
+        }
+
+        return $_SESSION['purchase_draft'];
     }
 
     private function parseMoney(string $value): float

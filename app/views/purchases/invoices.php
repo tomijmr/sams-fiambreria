@@ -6,47 +6,138 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header">Registrar comprobante de compra</div>
+    <div class="card-header">Cargar comprobante</div>
     <div class="card-body">
-        <form method="post" action="<?= BASE_URL ?>/purchases/invoices-store" class="row g-3">
+        <form method="post" action="<?= BASE_URL ?>/purchases/invoices/add-item" class="row g-3">
+            <?= csrf_field() ?>
             <div class="col-md-3">
                 <label class="form-label">Proveedor</label>
                 <select name="supplier_id" class="form-select" required>
                     <option value="">Seleccionar...</option>
                     <?php foreach ($suppliers as $supplier): ?>
-                        <option value="<?= (int)$supplier['id'] ?>"><?= htmlspecialchars($supplier['name']) ?></option>
+                        <option value="<?= (int)$supplier['id'] ?>" <?= (int)$header['supplier_id'] === (int)$supplier['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($supplier['name']) ?>
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Tipo</label>
                 <select name="doc_type" class="form-select">
-                    <option value="invoice">Factura</option>
-                    <option value="ticket">Ticket</option>
+                    <option value="invoice" <?= $header['doc_type'] === 'invoice' ? 'selected' : '' ?>>Factura</option>
+                    <option value="ticket" <?= $header['doc_type'] === 'ticket' ? 'selected' : '' ?>>Ticket</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Nro. comprobante</label>
-                <input type="text" name="doc_number" class="form-control" placeholder="Ej: 0001-00012345">
+                <input type="text" name="doc_number" class="form-control" value="<?= htmlspecialchars($header['doc_number']) ?>" placeholder="Ej: 0001-00012345">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Fecha</label>
-                <input type="date" name="date" value="<?= date('Y-m-d') ?>" class="form-control" required>
+                <input type="date" name="date" value="<?= htmlspecialchars($header['date']) ?>" class="form-control" required>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Observacion</label>
-                <input type="text" name="notes" class="form-control" placeholder="Opcional">
+                <input type="text" name="notes" class="form-control" value="<?= htmlspecialchars($header['notes']) ?>" placeholder="Opcional">
+            </div>
+
+            <div class="col-12"><hr class="my-1"></div>
+
+            <div class="col-md-3">
+                <label class="form-label">Codigo de barras</label>
+                <input type="text" name="barcode" class="form-control" required autofocus placeholder="Escanea o tipea el codigo">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Nombre <span class="text-muted">(solo si es producto nuevo)</span></label>
+                <input type="text" name="name" class="form-control" placeholder="Ej: Jamon Cocido">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo <span class="text-muted">(si es nuevo)</span></label>
+                <select name="unit_type" class="form-select">
+                    <option value="unit">Unidad</option>
+                    <option value="weight">Peso (kg)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cantidad</label>
+                <input type="number" step="0.001" min="0.001" name="quantity" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Costo unitario</label>
+                <input type="number" step="0.01" min="0.01" name="unit_cost" class="form-control" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Ganancia % <span class="text-muted">(si es nuevo)</span></label>
+                <input type="number" step="0.1" name="profit_percent" class="form-control" value="30">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-success w-100">Agregar item</button>
             </div>
 
             <div class="col-12">
-                <label class="form-label">Items (uno por linea: barcode,cantidad,costo_unitario)</label>
-                <textarea name="items_text" rows="8" class="form-control" placeholder="7622201735906,12,1900&#10;7792540260138,6,1200" required></textarea>
-                <div class="form-text">Para productos por peso, la cantidad es en kilogramos. Ejemplo: 3.5</div>
+                <small class="text-muted">
+                    Si el codigo de barras ya existe, se usa el producto cargado y se ignoran los campos "solo si es nuevo".
+                    Si no existe, se crea el producto con el nombre, tipo y ganancia indicados.
+                </small>
             </div>
+        </form>
+    </div>
+</div>
 
-            <div class="col-12">
-                <button class="btn btn-primary">Registrar factura/ticket y actualizar stock + costos</button>
-            </div>
+<div class="card mb-4">
+    <div class="card-header">Items del comprobante actual <?= !empty($items) ? '(' . count($items) . ')' : '' ?></div>
+    <div class="table-responsive">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Codigo</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Costo Unit.</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($items)): ?>
+                    <tr><td colspan="7" class="text-center text-muted py-3">Todavia no agregaste items a este comprobante.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($items as $index => $item): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($item['barcode']) ?></td>
+                        <td><?= htmlspecialchars($item['name']) ?></td>
+                        <td>
+                            <?= number_format((float)$item['quantity'], 3, ',', '.') ?>
+                            <?= $item['unit_type'] === 'weight' ? 'kg' : 'un.' ?>
+                        </td>
+                        <td>$ <?= number_format((float)$item['unit_cost'], 2, ',', '.') ?></td>
+                        <td>$ <?= number_format((float)$item['subtotal'], 2, ',', '.') ?></td>
+                        <td><?= !empty($item['is_new']) ? '<span class="badge text-bg-success">Nuevo</span>' : '' ?></td>
+                        <td>
+                            <form method="post" action="<?= BASE_URL ?>/purchases/invoices/remove-item">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="index" value="<?= $index ?>">
+                                <button class="btn btn-sm btn-outline-danger">Quitar</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+            <?php if (!empty($items)): ?>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">Total</th>
+                        <th colspan="3">$ <?= number_format($draftTotal, 2, ',', '.') ?></th>
+                    </tr>
+                </tfoot>
+            <?php endif; ?>
+        </table>
+    </div>
+    <div class="card-body">
+        <form method="post" action="<?= BASE_URL ?>/purchases/invoices/checkout" onsubmit="return confirm('Confirmar la compra? Se va a actualizar el stock y los costos.')">
+            <?= csrf_field() ?>
+            <button class="btn btn-primary" <?= empty($items) ? 'disabled' : '' ?>>Confirmar compra y actualizar stock</button>
         </form>
     </div>
 </div>

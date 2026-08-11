@@ -9,6 +9,7 @@
     <div class="card-header">Nuevo ingreso</div>
     <div class="card-body">
         <form method="post" action="<?= BASE_URL ?>/purchases/manual-store" class="row g-3">
+            <?= csrf_field() ?>
             <div class="col-md-4">
                 <label class="form-label">Producto</label>
                 <select name="product_id" class="form-select" required>

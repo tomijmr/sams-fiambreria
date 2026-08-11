@@ -8,6 +8,7 @@
     <div class="card-header">Nuevo Proveedor</div>
     <div class="card-body">
         <form method="post" action="<?= BASE_URL ?>/suppliers/store" class="row g-3">
+            <?= csrf_field() ?>
             <div class="col-md-4"><input name="name" class="form-control" placeholder="Nombre" required></div>
             <div class="col-md-3"><input name="phone" class="form-control" placeholder="Telefono"></div>
             <div class="col-md-3"><input name="contact" class="form-control" placeholder="Contacto"></div>
@@ -28,6 +29,7 @@
                     <td><?= htmlspecialchars($s['contact']) ?></td>
                     <td>
                         <form method="post" action="<?= BASE_URL ?>/suppliers/delete" onsubmit="return confirm('Eliminar proveedor?')">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="id" value="<?= $s['id'] ?>">
                             <button class="btn btn-sm btn-outline-danger">Eliminar</button>
                         </form>
